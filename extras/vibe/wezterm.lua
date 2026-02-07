@@ -53,13 +53,13 @@ local hacker_font_candidates = {
   'Roboto Mono',
   'Ubuntu Mono',
   'Consolas',
+  'PT Mono',
+  'Lucida Sans Typewriter',
+  'OCR A Extended',
+  'VT323',
 
-  -- Aspirational / clout (install to enable)
-  -- 'Berkeley Mono',
-  -- 'Iosevka',
-  -- 'Input Mono',
-  -- 'PragmataPro',
-  -- 'Operator Mono',
+  -- If you want to expand this list, add only fonts that are freely redistributable,
+  -- or keep them out-of-tree to avoid bundling/license friction.
 }
 
 local function make_hacker_font(primary)

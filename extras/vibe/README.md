@@ -32,8 +32,8 @@ No upstream source code changes are required for these behaviors.
     forces a pure black background.
 - Font cycling:
   - `Ctrl+Alt+F` cycles through a curated set of hacker fonts (installed fonts first).
-  - If you install additional fonts and uncomment them in the config, they'll be
-    included in the rotation.
+  - The list is intentionally limited to fonts already present on this Windows setup
+    plus other freely-available fonts (no paid fonts in the rotation).
 
 ## Install
 
