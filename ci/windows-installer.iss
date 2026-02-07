@@ -46,6 +46,8 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Source: "..\target\release\wezterm.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\target\release\wezterm-gui.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\target\release\wezterm-mux-server.exe"; DestDir: "{app}"; Flags: ignoreversion
+; Bundled default config for the Vibe QoL distro (users can override in %USERPROFILE%\.wezterm.lua)
+Source: "..\extras\vibe\wezterm.lua"; DestDir: "{app}"; DestName: "wezterm.lua"; Flags: ignoreversion
 Source: "..\target\release\mesa\opengl32.dll"; DestDir: "{app}\mesa"; Flags: ignoreversion
 Source: "..\target\release\libEGL.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\target\release\libGLESv2.dll"; DestDir: "{app}"; Flags: ignoreversion

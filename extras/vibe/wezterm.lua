@@ -61,6 +61,12 @@ local function save_state(st)
 end
 
 local builtin_schemes = wezterm.color.get_builtin_schemes()
+-- Distro defaults (what a brand new install will start with).
+-- If the scheme/font aren't available on the target machine, the config will
+-- fall back gracefully.
+local DEFAULT_COLOR_SCHEME = 'Blue Matrix'
+local DEFAULT_FONT_PRIMARY = 'OCR A Extended'
+
 local hacker_scheme_candidates = {
   -- Strong "hacker terminal" vibes
   'hardhacker',
@@ -93,7 +99,9 @@ local function pick_default_scheme()
   if type(name) == 'string' and builtin_schemes[name] then
     return name
   end
-  -- First entry is the default.
+  if builtin_schemes[DEFAULT_COLOR_SCHEME] then
+    return DEFAULT_COLOR_SCHEME
+  end
   return hacker_schemes[1]
 end
 
@@ -124,6 +132,11 @@ local hacker_font_candidates = {
 local function make_hacker_font(primary)
   return wezterm.font_with_fallback {
     primary,
+    -- Ensure we always have a sane mono fallback even if the "vibe" font isn't installed.
+    { family = 'Cascadia Mono' },
+    { family = 'Cascadia Code' },
+    { family = 'JetBrains Mono', weight = 'Medium' },
+    'Consolas',
     'Symbols Nerd Font Mono',
     'Noto Color Emoji',
   }
@@ -151,15 +164,37 @@ local function pick_default_font_primary()
       end
     end
   end
+
+  -- Distro default: try to use the selected "vibe" font if it's in the rotation.
+  for _, cand in ipairs(hacker_font_candidates) do
+    if same_primary_font(cand, DEFAULT_FONT_PRIMARY) then
+      return cand
+    end
+  end
+
   return hacker_font_candidates[1]
 end
+
+local function idx_for_primary(primary)
+  for i, cand in ipairs(hacker_font_candidates) do
+    if same_primary_font(cand, primary) then
+      return i
+    end
+  end
+  return 1
+end
+
+-- Align font cycling with the actual starting font, so Ctrl+Alt+F moves to the
+-- next font in the list rather than an arbitrary entry.
+local default_font_primary = pick_default_font_primary()
+local default_font_idx = idx_for_primary(default_font_primary)
 
 local font_idx_by_window_id = {}
 local function get_font_idx(window)
   local id = window:window_id()
   local idx = font_idx_by_window_id[id]
   if not idx then
-    idx = 1
+    idx = default_font_idx
     font_idx_by_window_id[id] = idx
   end
   return idx
@@ -365,7 +400,7 @@ local config = {
   disable_default_key_bindings = true,
 
   -- Font: pick a crisp "hacker" mono with sensible fallbacks.
-  font = make_hacker_font(pick_default_font_primary()),
+  font = make_hacker_font(default_font_primary),
   -- Disable ligatures for a more "terminal" look.
   harfbuzz_features = { 'calt=0', 'clig=0', 'liga=0' },
 

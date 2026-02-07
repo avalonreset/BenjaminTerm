@@ -1012,17 +1012,17 @@ impl Config {
         }
 
         if cfg!(windows) {
-            // On Windows, a common use case is to maintain a thumb drive
-            // with a set of portable tools that don't need to be installed
-            // to run on a target system.  In that scenario, the user would
-            // like to run with the config from their thumbdrive because
-            // either the target system won't have any config, or will have
-            // the config of another user.
-            // So we prioritize that here: if there is a config in the same
-            // dir as the executable that will take precedence.
+            // On Windows, allow a config file that lives next to the executable.
+            //
+            // In this fork, we primarily use this as a *bundled default* config
+            // shipped with the installer/zip, so it is intentionally evaluated
+            // after the per-user config locations.
+            //
+            // Users that want a portable or explicit override can use
+            // WEZTERM_CONFIG_FILE (handled below).
             if let Ok(exe_name) = std::env::current_exe() {
                 if let Some(exe_dir) = exe_name.parent() {
-                    paths.insert(0, PathPossibility::optional(exe_dir.join("wezterm.lua")));
+                    paths.push(PathPossibility::optional(exe_dir.join("wezterm.lua")));
                 }
             }
         }

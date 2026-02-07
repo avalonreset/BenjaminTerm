@@ -48,6 +48,21 @@ No upstream source code changes are required for these behaviors.
 
 ## Install
 
+### Using This Fork's Windows Distro
+
+Nothing to do: the Windows installer and portable `.zip` bundle the Vibe QoL
+config as `wezterm.lua` next to the executable, so a fresh install starts with:
+
+- Color scheme: `Blue Matrix` (pure black background forced)
+- Font: `OCR A Extended` (falls back to Cascadia/JetBrains/Consolas if missing)
+
+To customize, create a per-user config file; it will override the bundled one:
+
+- Windows: `%USERPROFILE%\.wezterm.lua`
+- Or: `~/.config/wezterm/wezterm.lua`
+
+### Using Upstream WezTerm
+
 Copy `extras/vibe/wezterm.lua` to your home config path:
 
 - Windows: `%USERPROFILE%\.wezterm.lua`

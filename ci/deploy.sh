@@ -121,6 +121,9 @@ case $OSTYPE in
       assets/windows/angle/libEGL.dll \
       assets/windows/angle/libGLESv2.dll \
       $zipdir
+    # Bundle the Vibe QoL default config next to the executable (Windows also
+    # checks for wezterm.lua in the executable directory).
+    cp extras/vibe/wezterm.lua $zipdir/wezterm.lua
     mkdir $zipdir/mesa
     cp $TARGET_DIR/release/mesa/opengl32.dll \
         $zipdir/mesa

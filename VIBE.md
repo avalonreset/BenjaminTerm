@@ -3,7 +3,9 @@
 This fork branch is primarily a **configuration-based** set of quality-of-life
 improvements built on top of upstream WezTerm, using its Lua configuration API.
 
-No upstream Rust code changes are required.
+A small Windows-only Rust tweak is included so the distro can ship a bundled
+default config (`wezterm.lua` next to the executable) while still allowing the
+per-user config paths to override it.
 
 ## What Changed
 
@@ -35,4 +37,3 @@ Reload config (`Ctrl+Shift+R`) or restart WezTerm.
 ## License
 
 WezTerm is MIT licensed; see `LICENSE.md`.
-

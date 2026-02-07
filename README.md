@@ -4,10 +4,14 @@
 
 ## Fork Notes (Vibe QoL)
 
-This fork adds a Windows-focused "Vibe QoL" config (smart paste, paste-undo, tabless UI, `pwsh` default) implemented via WezTerm's Lua config API.
+This fork adds a Windows-focused "Vibe QoL" experience (smart paste, paste-undo, tabless UI, `pwsh` default) primarily via WezTerm's Lua config API, plus a small Windows config-loading tweak so the distro can ship a sane default out-of-the-box.
 
 - See `extras/vibe/README.md`
 - Config file: `extras/vibe/wezterm.lua`
+- Windows distro: the installer and portable `.zip` bundle `wezterm.lua` next to the executable
+- Override: per-user config (`%USERPROFILE%\\.wezterm.lua` or `~/.config/wezterm/wezterm.lua`) still wins
+- Defaults (fresh install): color scheme `Blue Matrix` (pure black background forced)
+- Defaults (fresh install): font `OCR A Extended` (with fallbacks to Cascadia/JetBrains/Consolas)
 
 User facing docs and guide at: https://wezterm.org/
 
