@@ -1,4 +1,4 @@
-# WesTerm Vibe QoL on Pop!_OS (Linux)
+# WezTerm Vibe QoL on Pop!_OS (Linux)
 
 Pop!_OS is an Ubuntu-based Linux distribution from System76.
 
@@ -19,31 +19,18 @@ cd extras/vibe/linux
 It will:
 
 - Download the latest stable upstream WezTerm `.AppImage`
-- Install a small portable folder at `~/.local/opt/westerm-vibe`
+- Install a small portable folder at `~/.local/opt/wezterm-vibe`
 - Write `wezterm.lua` (the Vibe QoL config) into that folder
-- Create `~/.local/bin/westerm` (a wrapper command) if possible
+- Extract the AppImage (avoids FUSE dependency at runtime)
+- Create `~/.local/bin/wezterm-vibe` (a wrapper command) if possible
 
 Then launch with:
 
 ```sh
-westerm
+wezterm-vibe
 ```
 
 ## Notes / Troubleshooting
-
-- If the AppImage won't run, you may need FUSE:
-
-```sh
-sudo apt-get update
-sudo apt-get install -y libfuse2
-```
-
-If that package isn't available (newer Ubuntu base), try:
-
-```sh
-sudo apt-get update
-sudo apt-get install -y libfuse2t64
-```
 
 - Paste-undo on Linux is best-effort and depends on a clipboard helper:
   - Wayland: `wl-clipboard` (`wl-paste`)

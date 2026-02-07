@@ -1,4 +1,4 @@
-# WesTerm Vibe QoL (Windows)
+# WezTerm Vibe QoL (Windows)
 
 This fork branch is primarily a **configuration-based** set of quality-of-life
 improvements built on top of upstream WezTerm, using its Lua configuration API.

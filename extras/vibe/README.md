@@ -1,4 +1,4 @@
-# WesTerm (Vibe QoL)
+# WezTerm (Vibe QoL)
 
 ```text
  __      __           _______

@@ -34,13 +34,16 @@ here_dir() {
 REPO_ROOT="$(cd -- "$(here_dir)/../../.." && pwd)"
 VIBE_SRC="$REPO_ROOT/extras/vibe/wezterm.lua"
 
-INSTALL_DIR="${INSTALL_DIR:-$HOME/.local/opt/westerm-vibe}"
+INSTALL_DIR="${INSTALL_DIR:-$HOME/.local/opt/wezterm-vibe}"
 BIN_DIR="${BIN_DIR:-$HOME/.local/bin}"
 
 APPIMAGE="$INSTALL_DIR/WezTerm.AppImage"
 CFG="$INSTALL_DIR/wezterm.lua"
-WRAPPER="$INSTALL_DIR/westerm"
-BIN_LINK="$BIN_DIR/westerm"
+ROOT="$INSTALL_DIR/squashfs-root"
+GUI_BIN="$ROOT/usr/bin/wezterm-gui"
+CLI_BIN="$ROOT/usr/bin/wezterm"
+WRAPPER="$INSTALL_DIR/wezterm-vibe"
+BIN_LINK="$BIN_DIR/wezterm-vibe"
 
 mkdir -p "$INSTALL_DIR"
 
@@ -136,23 +139,43 @@ fi
 
 chmod +x "$APPIMAGE"
 
+say "Extracting AppImage (avoids FUSE dependency at runtime)..."
+rm -rf "$ROOT"
+(
+  cd "$INSTALL_DIR"
+  # `--appimage-extract` works even when FUSE isn't installed.
+  "$APPIMAGE" --appimage-extract >/dev/null
+)
+
+if [ ! -x "$GUI_BIN" ] && [ ! -x "$CLI_BIN" ]; then
+  say "error: AppImage extracted but wezterm binary not found under: $ROOT/usr/bin"
+  say "Try re-running bootstrap, or manually download a different AppImage."
+  exit 1
+fi
+
 cat >"$WRAPPER" <<'SH'
 #!/usr/bin/env sh
 set -eu
 DIR=$(cd -- "$(dirname -- "$0")" && pwd)
-APPIMAGE="$DIR/WezTerm.AppImage"
 CFG="$DIR/wezterm.lua"
+GUI="$DIR/squashfs-root/usr/bin/wezterm-gui"
+CLI="$DIR/squashfs-root/usr/bin/wezterm"
 
-if [ ! -x "$APPIMAGE" ]; then
-  printf '%s\n' "error: missing AppImage at: $APPIMAGE"
-  exit 1
-fi
 if [ ! -f "$CFG" ]; then
   printf '%s\n' "error: missing config at: $CFG"
   exit 1
 fi
 
-exec "$APPIMAGE" --config-file "$CFG" "$@"
+if [ -x "$GUI" ]; then
+  exec "$GUI" --config-file "$CFG" "$@"
+fi
+if [ -x "$CLI" ]; then
+  exec "$CLI" --config-file "$CFG" start "$@"
+fi
+
+printf '%s\n' "error: missing extracted wezterm binaries under: $DIR/squashfs-root/usr/bin"
+printf '%s\n' "Re-run the bootstrap script to re-extract the AppImage."
+exit 1
 SH
 
 chmod +x "$WRAPPER"
@@ -171,17 +194,13 @@ detect_os
 
 say ""
 say "Next:"
-say "  westerm"
+say "  wezterm-vibe"
 if ! have_path_entry "$BIN_DIR"; then
   say ""
   say "note: $BIN_DIR is not in PATH in this shell."
   say "You can run the full path:"
   say "  $WRAPPER"
 fi
-say ""
-say "If the AppImage fails to start, install FUSE:"
-say "  sudo apt-get update && sudo apt-get install -y libfuse2"
-say "  (if that package doesn't exist, try: sudo apt-get install -y libfuse2t64)"
 say ""
 say "For best paste-undo on Wayland/X11, install a clipboard helper:"
 say "  sudo apt-get update && sudo apt-get install -y wl-clipboard xclip xsel"
