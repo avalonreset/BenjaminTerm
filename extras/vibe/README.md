@@ -27,6 +27,9 @@ No upstream source code changes are required for these behaviors.
   - After you paste, press `Ctrl+Z` (within ~30 seconds) to quickly wipe the paste
     without holding Backspace.
   - Redo is best-effort via `Ctrl+Shift+Z` when possible.
+- Theme cycling:
+  - `Ctrl+Alt+T` cycles through a curated set of built-in "hacker-ish" themes and
+    forces a pure black background.
 
 ## Install
 
@@ -34,7 +37,7 @@ Copy `extras/vibe/wezterm.lua` to your home config path:
 
 - Windows: `%USERPROFILE%\.wezterm.lua`
 
-Then reload WezTerm (`Ctrl+Shift+R`) or restart it.
+Then reload WezTerm (`Ctrl+R`) or restart it.
 
 ## Notes
 
@@ -48,4 +51,3 @@ Then reload WezTerm (`Ctrl+Shift+R`) or restart it.
 WezTerm is MIT licensed; see `LICENSE.md` at the repository root. This config is
 derived from WezTerm's public configuration interfaces and is intended to be used
 with WezTerm.
-
