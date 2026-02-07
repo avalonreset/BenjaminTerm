@@ -72,7 +72,11 @@ Then reload WezTerm (`Ctrl+R`) or restart it.
 ## Notes
 
 - These behaviors are Windows-specific because the clipboard detection uses
-  `powershell.exe Get-Clipboard`.
+  `powershell.exe Get-Clipboard`. On Linux/macOS, the config intentionally does
+  not attempt to forward `Ctrl+V` into applications when an image is on the
+  clipboard (because `Ctrl+V` can have meaning inside shells/TUIs). Paste-undo
+  is best-effort and depends on a clipboard helper being available (`wl-paste`,
+  `xclip`, `xsel`, `pbpaste`).
 - The paste undo is a pragmatic "clear the paste quickly" feature, not a full
   editor-grade undo stack.
 

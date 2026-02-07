@@ -1011,19 +1011,18 @@ impl Config {
             paths.push(PathPossibility::optional(dir.join("wezterm.lua")))
         }
 
-        if cfg!(windows) {
-            // On Windows, allow a config file that lives next to the executable.
-            //
-            // In this fork, we primarily use this as a *bundled default* config
-            // shipped with the installer/zip, so it is intentionally evaluated
-            // after the per-user config locations.
-            //
-            // Users that want a portable or explicit override can use
-            // WEZTERM_CONFIG_FILE (handled below).
-            if let Ok(exe_name) = std::env::current_exe() {
-                if let Some(exe_dir) = exe_name.parent() {
-                    paths.push(PathPossibility::optional(exe_dir.join("wezterm.lua")));
-                }
+        // Allow a config file that lives next to the executable.
+        //
+        // In this fork, we primarily use this as a *bundled default* config
+        // shipped with the distro artifacts (eg: Windows installer/zip, Linux
+        // AppImage-in-a-folder). It is intentionally evaluated after the
+        // per-user config locations.
+        //
+        // Users that want a portable or explicit override can use
+        // WEZTERM_CONFIG_FILE (handled below).
+        if let Ok(exe_name) = std::env::current_exe() {
+            if let Some(exe_dir) = exe_name.parent() {
+                paths.push(PathPossibility::optional(exe_dir.join("wezterm.lua")));
             }
         }
         if let Some(path) = std::env::var_os("WEZTERM_CONFIG_FILE") {

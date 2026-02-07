@@ -1,6 +1,9 @@
 local wezterm = require 'wezterm'
 local act = wezterm.action
 
+local target = wezterm.target_triple or ''
+local is_windows = target:find('windows', 1, true) ~= nil
+
 local paste_undo_window_seconds = 30
 local paste_undo_max_chars = 200000
 local paste_undo_fallback_chars = 50000
@@ -140,6 +143,8 @@ local function make_hacker_font(primary)
     { family = 'Cascadia Code' },
     { family = 'JetBrains Mono', weight = 'Medium' },
     'Consolas',
+    'DejaVu Sans Mono',
+    'monospace',
     'Symbols Nerd Font Mono',
     'Noto Color Emoji',
   }
@@ -207,31 +212,60 @@ end
 -- If the clipboard currently holds an image, forward Ctrl+V into the running program
 -- (so apps like the Codex TUI can handle image paste). Otherwise, paste text normally.
 local function clipboard_has_image()
-  local ok, stdout, _ = wezterm.run_child_process {
-    'powershell.exe',
-    '-NoProfile',
-    '-NonInteractive',
-    '-Command',
-    -- `Get-Clipboard -Format Image` may return $null without throwing when there is
-    -- no image. Emit an explicit sentinel so we can reliably detect it.
-    "try { $img = Get-Clipboard -Format Image -ErrorAction Stop } catch { $img = $null }; if ($null -ne $img) { 'HAS_IMAGE' }",
-  }
-  return ok and stdout and stdout:find('HAS_IMAGE', 1, true) ~= nil
+  if is_windows then
+    local ok, stdout, _ = wezterm.run_child_process {
+      'powershell.exe',
+      '-NoProfile',
+      '-NonInteractive',
+      '-Command',
+      -- `Get-Clipboard -Format Image` may return $null without throwing when there is
+      -- no image. Emit an explicit sentinel so we can reliably detect it.
+      "try { $img = Get-Clipboard -Format Image -ErrorAction Stop } catch { $img = $null }; if ($null -ne $img) { 'HAS_IMAGE' }",
+    }
+    return ok and stdout and stdout:find('HAS_IMAGE', 1, true) ~= nil
+  end
+
+  -- We intentionally do NOT try to forward Ctrl+V on Linux/macOS: Ctrl+V can be a
+  -- meaningful keybinding inside shells and TUI apps (eg: readline "quoted insert").
+  return false
 end
 
 local function get_clipboard_text()
-  local ok, stdout, _ = wezterm.run_child_process {
-    'powershell.exe',
-    '-NoProfile',
-    '-NonInteractive',
-    '-Command',
-    -- Use Console.Out.Write to avoid adding a trailing newline.
-    "try { $t = Get-Clipboard -Raw -ErrorAction Stop } catch { $t = $null }; if ($null -ne $t) { [Console]::Out.Write($t) }",
-  }
-  if not ok then
-    return nil
+  if is_windows then
+    local ok, stdout, _ = wezterm.run_child_process {
+      'powershell.exe',
+      '-NoProfile',
+      '-NonInteractive',
+      '-Command',
+      -- Use Console.Out.Write to avoid adding a trailing newline.
+      "try { $t = Get-Clipboard -Raw -ErrorAction Stop } catch { $t = $null }; if ($null -ne $t) { [Console]::Out.Write($t) }",
+    }
+    if not ok then
+      return nil
+    end
+    return stdout or ''
   end
-  return stdout or ''
+
+  -- Best-effort on Linux/macOS. If no helper is available, we simply won't
+  -- enable paste-undo for that paste (we avoid destructive "guess delete" logic).
+  local commands = {
+    -- Wayland
+    { 'sh', '-lc', "command -v wl-paste >/dev/null 2>&1 && wl-paste --no-newline 2>/dev/null || true" },
+    -- X11
+    { 'sh', '-lc', "command -v xclip >/dev/null 2>&1 && xclip -selection clipboard -o 2>/dev/null || true" },
+    { 'sh', '-lc', "command -v xsel >/dev/null 2>&1 && xsel --clipboard --output 2>/dev/null || true" },
+    -- macOS (pbpaste always exists on normal installs)
+    { 'sh', '-lc', "command -v pbpaste >/dev/null 2>&1 && pbpaste || true" },
+  }
+
+  for _, cmd in ipairs(commands) do
+    local ok, stdout, _ = wezterm.run_child_process(cmd)
+    if ok and type(stdout) == 'string' and stdout ~= '' then
+      return stdout
+    end
+  end
+
+  return nil
 end
 
 local function now_epoch_seconds()
@@ -290,7 +324,7 @@ local smart_paste = wezterm.action_callback(function(window, pane)
   -- image-aware TUIs (like Codex) can handle it.
   -- Only do this if the paste didn't visibly change the viewport; otherwise
   -- we'd risk forwarding Ctrl+V after successfully pasting text.
-  if (not changed) and clipboard_has_image() then
+  if is_windows and (not changed) and clipboard_has_image() then
     window:perform_action(act.SendKey { key = 'v', mods = 'CTRL' }, pane)
     return
   end
@@ -325,11 +359,15 @@ local undo_paste = wezterm.action_callback(function(window, pane)
     return
   end
 
-  -- If we recorded the pasted text, delete that exact length.
-  -- Otherwise, fall back to deleting a large number of characters to quickly
-  -- clear the pasted input (best-effort).
-  local n = entry and entry.len or paste_undo_fallback_chars
-  send_back_delete(pane, n)
+  -- If we didn't record the pasted text (eg: clipboard helper not available),
+  -- don't guess. Pass Ctrl+Z through instead of deleting arbitrary input.
+  if not entry then
+    window:perform_action(act.SendKey { key = 'z', mods = 'CTRL' }, pane)
+    return
+  end
+
+  -- Delete the recorded paste length.
+  send_back_delete(pane, entry.len)
 
   if entry then
     table.remove(st.undo)
@@ -395,10 +433,6 @@ local function pick_default_window_decorations()
 end
 
 local config = {
-  -- Use PowerShell 7 by default. Command history is a shell feature (PSReadLine),
-  -- whereas cmd.exe history is not persisted across sessions by default.
-  default_prog = { 'pwsh.exe', '-NoLogo' },
-
   enable_tab_bar = false,
   disable_default_key_bindings = true,
 
@@ -413,7 +447,6 @@ local config = {
     background = '#000000',
   },
   window_background_opacity = 1.0,
-  win32_system_backdrop = 'Disable',
 
   -- On Windows the native titlebar color is controlled by the OS; if you want
   -- a "pure black" top edge, the reliable option is to remove the title bar.
@@ -423,24 +456,25 @@ local config = {
   default_cursor_style = 'BlinkingBlock',
 
   keys = {
-    -- Copy selection (Ctrl+Shift+C)
-    { key = 'C', mods = 'CTRL', action = act.CopyTo 'Clipboard' },
+    -- Copy selection (Ctrl+Shift+C). Don't steal Ctrl+C: users need SIGINT in shells/TUIs.
+    { key = 'C', mods = 'CTRL|SHIFT', action = act.CopyTo 'Clipboard' },
 
     -- Paste: one key, two behaviors
     { key = 'v', mods = 'CTRL', action = smart_paste },
 
     -- Keep a guaranteed plain-text paste on Ctrl+Shift+V
-    { key = 'V', mods = 'CTRL', action = act.PasteFrom 'Clipboard' },
+    { key = 'V', mods = 'CTRL|SHIFT', action = act.PasteFrom 'Clipboard' },
 
     -- Undo/redo the most recent paste (best-effort).
     -- Ctrl+Z is `key='z', mods='CTRL'` and Ctrl+Shift+Z is `key='Z', mods='CTRL'`.
     { key = 'z', mods = 'CTRL', action = undo_paste },
-    { key = 'Z', mods = 'CTRL', action = redo_paste },
+    { key = 'Z', mods = 'CTRL|SHIFT', action = redo_paste },
     -- More explicit variants to be resilient to `key_map_preference` and layout differences.
     { key = 'mapped:z', mods = 'CTRL', action = undo_paste },
-    { key = 'mapped:Z', mods = 'CTRL', action = redo_paste },
+    { key = 'mapped:Z', mods = 'CTRL|SHIFT', action = redo_paste },
 
-    { key = 'R', mods = 'CTRL', action = act.ReloadConfiguration },
+    -- Reload config (Ctrl+Shift+R). Don't steal Ctrl+R: shells use it for history search.
+    { key = 'R', mods = 'CTRL|SHIFT', action = act.ReloadConfiguration },
 
     { key = '-', mods = 'CTRL', action = act.DecreaseFontSize },
     { key = '=', mods = 'CTRL', action = act.IncreaseFontSize },
@@ -479,6 +513,13 @@ local config = {
     { key = 'd', mods = 'CTRL|ALT', action = act.StartWindowDrag },
   },
 }
+
+if is_windows then
+  -- Use PowerShell 7 by default on Windows. Command history is a shell feature (PSReadLine),
+  -- whereas cmd.exe history is not persisted across sessions by default.
+  config.default_prog = { 'pwsh.exe', '-NoLogo' }
+  config.win32_system_backdrop = 'Disable'
+end
 
 return config
 
