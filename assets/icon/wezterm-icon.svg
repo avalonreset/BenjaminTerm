@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#090000"/>
+      <stop offset="100%" stop-color="#130000"/>
+    </linearGradient>
+    <filter id="glow" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="8" result="b"/>
+      <feMerge>
+        <feMergeNode in="b"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <pattern id="scan" width="6" height="6" patternUnits="userSpaceOnUse">
+      <rect width="6" height="1" fill="#000" opacity="0.24"/>
+    </pattern>
+  </defs>
+
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <text
+    x="512"
+    y="564"
+    text-anchor="middle"
+    font-family="'JetBrains Mono', 'Fira Code', Consolas, monospace"
+    font-size="430"
+    font-weight="800"
+    letter-spacing="4"
+    fill="#ff1010"
+    filter="url(#glow)">BEN</text>
+  <rect width="1024" height="1024" fill="url(#scan)" opacity="0.45"/>
+</svg>
